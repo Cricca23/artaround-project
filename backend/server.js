@@ -1,3 +1,4 @@
+require('dotenv').config();
 // --- IMPORTAZIONI (In cima) ---
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // --- DATABASE ---
-mongoose.connect('mongodb://localhost:27017/artaround')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Connesso a MongoDB con successo!'))
   .catch(err => console.error('❌ Errore di connessione a MongoDB:', err));
 
