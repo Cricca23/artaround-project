@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArtAround — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">ArtAround <span>Dashboard</span></div>
+  <div class="account-btn" id="accountBtn" onclick="toggleMenu()">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+    <div class="account-menu" id="accountMenu">
+      <button class="account-menu-item" onclick="toggleTheme()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 3v1m0 16v1M4.22 4.22l.7.7m12.16 12.16.7.7M3 12h1m16 0h1M4.22 19.78l.7-.7M18.36 5.64l.7-.7" stroke-linecap="round"/><circle cx="12" cy="12" r="4"/></svg>
+        <span id="themeLabel">Tema chiaro</span>
+      </button>
+      <div class="menu-divider"></div>
+      <button class="account-menu-item danger" onclick="logout()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Esci
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!--HOME-->
+  <div class="view active" id="view-home">
+    <div class="home-header">
+      <h1>Cosa vuoi fare?</h1>
+      <p>Gestisci visite e quiz per le tue classi</p>
+    </div>
+    <div class="home-grid">
+      <div class="home-card" onclick="navigate('view-crea-visita')">
+        <span class="home-card-icon">🗺️</span>
+        <h3>Crea visita</h3>
+        <p>Componi una nuova sequenza di opere e salvala</p>
+      </div>
+      <div class="home-card" onclick="navigate('view-edita-visita')">
+        <span class="home-card-icon">✏️</span>
+        <h3>Edita visita</h3>
+        <p>Modifica la sequenza di una visita esistente</p>
+      </div>
+      <div class="home-card" onclick="navigate('view-quiz')">
+        <span class="home-card-icon">🧠</span>
+        <h3>Gestisci quiz</h3>
+        <p>Crea o modifica i quiz associati alle visite</p>
+      </div>
+    </div>
+  </div>
+
+  <!--CREA VISITA-->
+  <div class="view" id="view-crea-visita">
+    <div class="page-header">
+      <button class="back-btn" onclick="navigate('view-home')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2>Nuova visita</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Dettagli</div>
+      <div class="form-group">
+        <label>Nome visita</label>
+        <input type="text" id="visit-name" placeholder="Es. Fenice Rossa">
+      </div>
+      <div class="form-group">
+        <label>Codice visita</label>
+        <input type="text" id="visit-code" placeholder="Es. fenice-rossa">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Seleziona opere</div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <input type="text" id="search-opere" placeholder="Filtra per titolo o autore..." oninput="filtraOpere('opere-grid-crea')">
+      </div>
+      <div class="opere-grid" id="opere-grid-crea"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sequenza selezionata</div>
+      <div class="sequenza-wrap" id="sequenza-container-crea">
+        <p class="empty-hint">Clicca sulle opere per aggiungerle in sequenza.</p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="creaVisita()">Salva visita</button>
+    <div id="msg-visita"></div>
+  </div>
+
+  <!--EDITA VISITA-->
+  <div class="view" id="view-edita-visita">
+    <div class="page-header">
+      <button class="back-btn" id="edita-back-btn" onclick="editaBack()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 id="edita-page-title">Edita visita</h2>
+    </div>
+
+    <div id="visite-list-container"></div>
+
+    <div id="edita-form" class="hidden">
+      <div class="card">
+        <div class="card-title">Seleziona opere</div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <input type="text" id="search-opere-edit" placeholder="Filtra per titolo o autore..." oninput="filtraOpere('opere-grid-edit')">
+        </div>
+        <div class="opere-grid" id="opere-grid-edit"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sequenza attuale</div>
+        <div class="sequenza-wrap" id="sequenza-container-edit">
+          <p class="empty-hint">Nessuna opera selezionata.</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="salvaEditVisita()">Salva modifiche</button>
+      <div id="msg-edit-visita"></div>
+    </div>
+  </div>
+
+  <!--QUIZ-->
+  <div class="view" id="view-quiz">
+    <div class="page-header">
+      <button class="back-btn" id="quiz-back-btn" onclick="quizBack()">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 id="quiz-page-title">Gestisci quiz</h2>
+    </div>
+
+    <div id="quiz-visite-list-container"></div>
+
+    <div id="quiz-form-wrap" class="hidden">
+      <div id="domande-container"></div>
+      <div style="margin-bottom:20px;">
+        <button class="btn btn-ghost btn-sm" onclick="aggiungiDomanda()">+ Aggiungi domanda</button>
+      </div>
+      <button class="btn btn-primary" onclick="salvaQuiz()">Salva quiz</button>
+      <div id="msg-quiz"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
