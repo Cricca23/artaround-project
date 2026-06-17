@@ -8,21 +8,25 @@
         body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        input, textarea, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; }
         button:hover { background-color: #218838; }
         
         /* Stili per messaggi e sezioni */
-        #message { margin-top: 20px; padding: 10px; display: none; text-align: center; font-weight: bold; border-radius: 5px;}
+        #message, #visitFeedback { margin-top: 20px; padding: 10px; display: none; text-align: center; font-weight: bold; border-radius: 5px;}
         .hidden { display: none; }
         
         /* Login Box */
         #login-section { background: #e9ecef; padding: 20px; border-radius: 8px; text-align: center; }
         #login-section input { max-width: 300px; margin: 10px auto; display: block; }
 
-        /* Lista Opere */
+        /* Lista Opere e Visite */
         .artwork-list { margin-top: 40px; border-top: 2px solid #ddd; padding-top: 20px; }
         .artwork-card { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        
+        /* Stili aggiuntivi per le Visite */
+        .visit-section { background: #f0f8ff; border: 1px solid #b8daff; padding: 20px; margin-top: 30px; border-radius: 8px; }
+        .step-entry { background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -62,19 +66,71 @@
             <button onclick="salvaOpera()">💾 Salva Opera</button>
         </div>
 
-    <div id="message"></div>
+        <div id="message"></div>
 
-    <div class="artwork-list">
-        <h2>🖼️ Opere nel Museo</h2>
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="searchBar" placeholder="🔍 Cerca opera..." onkeyup="cercaOpere()" style="padding: 10px;">
+        <div class="visit-section">
+            <h2>🗺️ Crea Nuova Visita Guidata</h2>
+            <form id="visitForm">
+                <div class="form-group">
+                    <label for="mnemonicName">Nome Mnemonico (es. Fenice rossa):</label>
+                    <input type="text" id="mnemonicName" required>
+                </div>
+                <div class="form-group">
+                    <label for="generalLogistics">Indicazioni Logistiche Generali:</label>
+                    <textarea id="generalLogistics" rows="2" placeholder="es. L'entrata è da via Garibaldi 2..." required></textarea>
+                </div>
+
+                <div id="stepsContainer">
+                    <h3>Sequenza della Visita (Tappe)</h3>
+                    <div class="step-entry">
+                        <label>Seleziona Opere (Tieni premuto Ctrl/Cmd per selezionarne più di una):</label>
+                        <select class="item-select" multiple required style="height: 100px;">
+                            </select>
+                        <br><br>
+                        <label>Logistica verso la prossima tappa (opzionale):</label>
+                        <input type="text" class="nav-logistics" placeholder="es. Proseguire a sinistra verso la sala 12...">
+                    </div>
+                </div>
+                <button type="button" id="addStepBtn" style="background-color: #17a2b8; margin-bottom: 20px;">+ Aggiungi altra Tappa</button>
+
+                <div style="background: white; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h3>❓ Quiz di fine visita</h3>
+                    <div class="form-group">
+                        <label>Domanda:</label>
+                        <input type="text" id="quizQuestion" placeholder="es. In che anno è stata dipinta?" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Opzioni di risposta (separate da virgola):</label>
+                        <input type="text" id="quizOptions" placeholder="Roma, Milano, Napoli" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Indice risposta corretta (0 per la prima, 1 per la seconda...):</label>
+                        <input type="number" id="quizCorrectIndex" min="0" required>
+                    </div>
+                </div>
+
+                <button type="submit" style="width: 100%; font-size: 16px;">🚀 Salva Visita nel Database</button>
+            </form>
+            <div id="visitFeedback"></div>
+            <div style="margin-top: 30px; border-top: 2px dashed #b8daff; padding-top: 20px;">
+                <h3>📋 Visite Create (Marketplace)</h3>
+                <button type="button" onclick="caricaVisite()" style="background-color: #007bff; margin-bottom: 15px; padding: 5px 10px; font-size: 14px;">🔄 Aggiorna Lista</button>
+                <div id="lista-visite"><p>Caricamento visite...</p></div>
+            </div>
         </div>
-        <div id="lista-opere"><p>Caricamento...</p></div>
-    </div>
-
+        <div class="artwork-list">
+            <h2>🖼️ Opere nel Museo</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="searchBar" placeholder="🔍 Cerca opera..." onkeyup="cercaOpere()" style="padding: 10px;">
+            </div>
+            <div id="lista-opere"><p>Caricamento...</p></div>
+        </div>
+    </div> 
+    
     <script>
-       const API_URL = 'http://localhost:3000/api';
+        const API_URL = 'http://localhost:3000/api';
         let token = localStorage.getItem('artaround_token');
+        let itemOptionsHTML = ""; // Variabile per salvare le opere per il menu a tendina delle visite
 
         if (token) {
             mostraEditor();
@@ -115,6 +171,8 @@
         function mostraEditor() {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('editor-section').classList.remove('hidden');
+            loadItemsForSelect(); // Carica le opere nel menu a tendina appena si entra
+            caricaVisite(); // <-- PRIMO AGGANCIO INSERITO QUI
         }
 
         async function salvaOpera() {
@@ -155,6 +213,7 @@
                     msgDiv.style.background = '#d4edda'; 
                     msgDiv.style.color = '#155724';
                     cercaOpere();
+                    loadItemsForSelect(); // Aggiorna anche il menu a tendina delle visite
                 } else {
                     msgDiv.innerHTML = `❌ Errore: ${data.message}`;
                     msgDiv.style.background = '#f8d7da'; 
@@ -195,6 +254,141 @@
             }
         }
 
+        // ==========================================
+        // INIZIO LOGICA JAVASCRIPT PER LE VISITE
+        // ==========================================
+
+        // 1. Carica le opere dal DB per riempire i menu a tendina delle tappe
+        async function loadItemsForSelect() {
+            try {
+                const response = await fetch(`${API_URL}/items`);
+                const items = await response.json();
+                
+                itemOptionsHTML = items.map(item => 
+                    `<option value="${item._id}">${item.name} (${item.author})</option>`
+                ).join('');
+                
+                // Popola tutte le select attualmente presenti nella pagina
+                document.querySelectorAll('.item-select').forEach(select => {
+                    select.innerHTML = itemOptionsHTML;
+                });
+            } catch (error) {
+                console.error("Errore nel caricamento degli Item:", error);
+            }
+        }
+
+        // 2. Bottone per aggiungere un'altra Tappa alla visita
+        document.getElementById('addStepBtn').addEventListener('click', () => {
+            const stepsContainer = document.getElementById('stepsContainer');
+            const newStep = document.createElement('div');
+            newStep.className = 'step-entry';
+            newStep.innerHTML = `
+                <label>Seleziona Opere (Tieni premuto Ctrl/Cmd per selezione multipla):</label>
+                <select class="item-select" multiple required style="height: 100px;">
+                    ${itemOptionsHTML}
+                </select>
+                <br><br>
+                <label>Logistica verso la prossima tappa (opzionale):</label>
+                <input type="text" class="nav-logistics" placeholder="es. Proseguire a sinistra...">
+            `;
+            stepsContainer.appendChild(newStep);
+        });
+
+        // 3. Salvataggio della Visita al Backend
+        document.getElementById('visitForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const mnemonicName = document.getElementById('mnemonicName').value;
+            const generalLogistics = document.getElementById('generalLogistics').value;
+            
+            // Crea l'array degli Step (Tappe)
+            const stepElements = document.querySelectorAll('.step-entry');
+            const steps = Array.from(stepElements).map(step => {
+                const select = step.querySelector('.item-select');
+                const selectedItems = Array.from(select.selectedOptions).map(opt => opt.value);
+                const navLogistics = step.querySelector('.nav-logistics').value;
+                return {
+                    items: selectedItems,
+                    navigationLogistics: navLogistics
+                };
+            });
+
+            // Crea l'array dei Quiz
+            const quizOptionsRaw = document.getElementById('quizOptions').value;
+            const quizzes = [{
+                question: document.getElementById('quizQuestion').value,
+                options: quizOptionsRaw.split(',').map(opt => opt.trim()),
+                correctOptionIndex: parseInt(document.getElementById('quizCorrectIndex').value, 10)
+            }];
+
+            const visitPayload = { mnemonicName, generalLogistics, steps, quizzes };
+
+            try {
+                const response = await fetch(`${API_URL}/visits`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(visitPayload)
+                });
+
+                const result = await response.json();
+                const feedbackEl = document.getElementById('visitFeedback');
+                feedbackEl.style.display = 'block';
+
+                if (response.ok) {
+                    feedbackEl.style.color = "#155724";
+                    feedbackEl.style.background = "#d4edda";
+                    feedbackEl.innerHTML = "✅ Visita salvata con successo nel Database!";
+                    document.getElementById('visitForm').reset();
+                    caricaVisite(); // <-- SECONDO AGGANCIO INSERITO QUI
+                } else {
+                    feedbackEl.style.color = "#721c24";
+                    feedbackEl.style.background = "#f8d7da";
+                    feedbackEl.innerHTML = `❌ Errore: ${result.message}`;
+                }
+            } catch (error) {
+                console.error("Errore di rete:", error);
+                alert("Errore di rete durante il salvataggio della visita.");
+            }
+        });
+
+        // ==========================================
+        // FINE LOGICA JAVASCRIPT PER LE VISITE
+        // ==========================================
+        // 4. Carica e mostra l'elenco delle visite dal Backend
+        async function caricaVisite() {
+            try {
+                const response = await fetch(`${API_URL}/visits`);
+                const visite = await response.json();
+                const container = document.getElementById('lista-visite');
+                container.innerHTML = '';
+
+                if (!visite || visite.length === 0) {
+                    container.innerHTML = '<p>Nessuna visita creata al momento.</p>';
+                    return;
+                }
+
+                // Genera una card per ogni visita trovata
+                visite.forEach(v => {
+                    const numTappe = v.steps ? v.steps.length : 0;
+                    const autore = v.author ? v.author.name : 'Insegnante';
+                    
+                    container.innerHTML += `
+                        <div class="artwork-card" style="border-left: 5px solid #17a2b8;">
+                            <h4 style="margin: 0 0 10px 0; color: #17a2b8;">🚩 Nome Mnemonico: "${v.mnemonicName}"</h4>
+                            <p style="margin: 5px 0;"><strong>Logistica:</strong> ${v.generalLogistics}</p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #555;">
+                                <strong>Numero di Tappe:</strong> ${numTappe} | <strong>Creata da:</strong> ${autore}
+                            </p>
+                        </div>`;
+                });
+            } catch (error) {
+                console.error("Errore nel caricamento delle visite:", error);
+                document.getElementById('lista-visite').innerHTML = '<p style="color:red;">Errore di connessione al server.</p>';
+            }
+        }
         window.onload = cercaOpere;
     </script>
 
